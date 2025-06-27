@@ -4,11 +4,11 @@
 # DEPLOY TELEGRAM BOT + WEB UI + NGROK (NO ROOT)
 # =========================
 
-# 👉 CONFIGURA ESTOS DATOS
+# CONFIGURA ESTOS DATOS
 BOT_TOKEN="TU_TOKEN_DE_TELEGRAM_AQUI"
 PORT=5000
 
-# 👉 Nombres de carpetas
+# Nombres de carpetas
 APP_DIR="$HOME/tg_bot_stream"
 VENV_DIR="$APP_DIR/venv"
 MEDIA_DIR="$APP_DIR/media"
