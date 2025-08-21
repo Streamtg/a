@@ -8,7 +8,7 @@ import mimetypes
 
 API_ID = 12345
 API_HASH = "YOUR_API_HASH"
-BOT_TOKEN = "YOUR_BOT_TOKEN"
+BOT_TOKEN = "8256526472:AAHyvbxwrK1Z8_CcU9p4Odh6y6twjJKEzhc"
 
 app = Client("universal_media_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
