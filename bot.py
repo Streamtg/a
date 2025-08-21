@@ -11,8 +11,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Telegram API credentials (replace with your own)
-API_ID = 1234567  # Replace with your actual api_id (integer)
-API_HASH = "0123456789abcdef0123456789abcdef"  # Replace with your actual api_hash (string)
+API_ID = 10565113  # Replace with your actual api_id (integer)
+API_HASH = "d2220b87fb12fc430dc8fcebbb03d95c"  # Replace with your actual api_hash (string)
 BOT_TOKEN = "8256526472:AAHyvbxwrK1Z8_CcU9p4Odh6y6twjJKEzhc"  # Replace with your actual bot_token
 SESSION_NAME = "my_bot"
 
