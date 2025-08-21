@@ -1,4 +1,4 @@
-pyrogram==2.0.106
-Pillow==10.4.0
-pydub==0.25.1
-ffmpeg-python==0.2.0
+pyrogram
+Pillow
+pydub
+ffmpeg
