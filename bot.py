@@ -11,14 +11,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Telegram API credentials (replace with your own)
-API_ID = "your_api_id"  # Get from https://my.telegram.org
-API_HASH = "your_api_hash"  # Get from https://my.telegram.org
-BOT_TOKEN = "your_bot_token"  # Get from @BotFather
+API_ID = 1234567  # Replace with your actual api_id (integer)
+API_HASH = "0123456789abcdef0123456789abcdef"  # Replace with your actual api_hash (string)
+BOT_TOKEN = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"  # Replace with your actual bot_token
 SESSION_NAME = "my_bot"
 
 # File to upload (replace with your file path)
-FILE_PATH = "path/to/your/file.mp4"  # Ensure this file exists
-CHAT_ID = "me"  # Use "me" to send to yourself, or replace with a chat ID
+FILE_PATH = "/home/idies/o/test.mp4"  # Replace with a valid file path
+CHAT_ID = "me"  # Use "me" to send to yourself, or replace with a chat ID (e.g., 123456789)
 
 # Retry function for handling uploads with timeouts or rate limits
 async def upload_with_retry(client, chat_id, file_path, retries=3, delay=2):
@@ -50,7 +50,7 @@ async def main():
         api_id=API_ID,
         api_hash=API_HASH,
         bot_token=BOT_TOKEN,
-        # No proxy configuration
+        timeout=60  # Increased timeout to handle GetFile issues
     ) as app:
         try:
             # Send a test message to verify connection
