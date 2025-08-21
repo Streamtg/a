@@ -66,7 +66,7 @@ async def universal_rewriter(client: Client, message: Message):
     new_path = None
     try:
         # Descargar archivo con un nombre único para evitar conflictos
-        file_path = await message.download(file_name=f"download_{message.id}_{message.document.file_name if message.document else 'media'}")
+        file_path = await message.download(file_name=f"downloads/download_{message.id}_{message.document.file_name if message.document else 'media'}")
         if not file_path or not os.path.exists(file_path):
             logger.error(f"No se pudo descargar el archivo o la ruta no existe: {file_path}")
             raise ValueError("No se pudo descargar el archivo o la ruta es inválida.")
