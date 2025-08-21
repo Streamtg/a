@@ -6,8 +6,8 @@ import subprocess
 import os
 import mimetypes
 
-API_ID = 12345
-API_HASH = "YOUR_API_HASH"
+API_ID =10565113
+API_HASH = "d2220b87fb12fc430dc8fcebbb03d95c"
 BOT_TOKEN = "8256526472:AAHyvbxwrK1Z8_CcU9p4Odh6y6twjJKEzhc"
 
 app = Client("universal_media_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
