@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 # Telegram API credentials (replace with your own)
 API_ID = 1234567  # Replace with your actual api_id (integer)
 API_HASH = "0123456789abcdef0123456789abcdef"  # Replace with your actual api_hash (string)
-BOT_TOKEN = "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"  # Replace with your actual bot_token
+BOT_TOKEN = "8256526472:AAHyvbxwrK1Z8_CcU9p4Odh6y6twjJKEzhc"  # Replace with your actual bot_token
 SESSION_NAME = "my_bot"
 
 # File to upload (replace with your file path)
