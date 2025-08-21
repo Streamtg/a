@@ -1,122 +1,72 @@
-from pyrogram import Client, filters
-from pyrogram.types import Message
-from PIL import Image
-from pydub import AudioSegment
-import subprocess
-import os
-import mimetypes
-import shutil
 import logging
+import asyncio
+from pyrogram import Client
+from pyrogram.errors import FloodWait, RPCError
 
-# Configurar logging para depuración
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Configure logging to capture detailed debug information
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
-API_ID = 10565113
-API_HASH = "d2220b87fb12fc430dc8fcebbb03d95c"
-BOT_TOKEN = "8256526472:AAHyvbxwrK1Z8_CcU9p4Odh6y6twjJKEzhc"
+# Telegram API credentials (replace with your own)
+API_ID = "your_api_id"  # Get from https://my.telegram.org
+API_HASH = "your_api_hash"  # Get from https://my.telegram.org
+BOT_TOKEN = "your_bot_token"  # Get from @BotFather
+SESSION_NAME = "my_bot"
 
-app = Client("universal_media_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+# File to upload (replace with your file path)
+FILE_PATH = "path/to/your/file.mp4"  # Ensure this file exists
+CHAT_ID = "me"  # Use "me" to send to yourself, or replace with a chat ID
 
-# Funciones de procesamiento
-def sanitize_image(path, output_path):
-    try:
-        logger.info(f"Procesando imagen: {path}")
-        img = Image.open(path)
-        # Eliminar metadatos EXIF
-        data = list(img.getdata())
-        img_clean = Image.new(img.mode, img.size)
-        img_clean.putdata(data)
-        img_clean.save(output_path, optimize=True)
-        logger.info(f"Imagen procesada guardada en: {output_path}")
-    except Exception as e:
-        logger.error(f"Error al procesar imagen {path}: {e}")
-        raise
+# Retry function for handling uploads with timeouts or rate limits
+async def upload_with_retry(client, chat_id, file_path, retries=3, delay=2):
+    for attempt in range(retries):
+        try:
+            logger.info(f"Attempt {attempt + 1}: Uploading file {file_path}")
+            await client.send_document(chat_id, file_path)
+            logger.info("File uploaded successfully")
+            return
+        except FloodWait as e:
+            logger.warning(f"FloodWait: Waiting for {e.value} seconds")
+            await asyncio.sleep(e.value)
+        except RPCError as e:
+            logger.error(f"Attempt {attempt + 1} failed: {e}")
+            if attempt + 1 == retries:
+                logger.error("Max retries reached. Upload failed.")
+                raise
+            await asyncio.sleep(delay)
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            if attempt + 1 == retries:
+                raise
+            await asyncio.sleep(delay)
 
-def sanitize_audio(path, output_path):
-    try:
-        logger.info(f"Procesando audio: {path}")
-        audio = AudioSegment.from_file(path)
-        audio.export(output_path, format="mp3", bitrate="192k")
-        logger.info(f"Audio procesado guardado en: {output_path}")
-    except Exception as e:
-        logger.error(f"Error al procesar audio {path}: {e}")
-        raise
+async def main():
+    # Initialize Pyrogram client without proxy
+    async with Client(
+        name=SESSION_NAME,
+        api_id=API_ID,
+        api_hash=API_HASH,
+        bot_token=BOT_TOKEN,
+        # No proxy configuration
+    ) as app:
+        try:
+            # Send a test message to verify connection
+            await app.send_message(CHAT_ID, "Bot started successfully!")
+            logger.info("Test message sent")
 
-def sanitize_video(path, output_path):
-    try:
-        logger.info(f"Procesando video: {path}")
-        result = subprocess.run([
-            "ffmpeg", "-i", path,
-            "-c:v", "libx264", "-preset", "fast",
-            "-c:a", "aac", "-b:a", "128k",
-            output_path
-        ], check=True, capture_output=True, text=True)
-        logger.info(f"Video procesado guardado en: {output_path}")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Error de FFmpeg al procesar video {path}: {e.stderr}")
-        raise
-    except Exception as e:
-        logger.error(f"Error al procesar video {path}: {e}")
-        raise
-
-@app.on_message(filters.document | filters.audio | filters.video | filters.photo)
-async def universal_rewriter(client: Client, message: Message):
-    file_path = None
-    new_path = None
-    try:
-        # Descargar archivo con un nombre único para evitar conflictos
-        file_path = await message.download(file_name=f"downloads/download_{message.id}_{message.document.file_name if message.document else 'media'}")
-        if not file_path or not os.path.exists(file_path):
-            logger.error(f"No se pudo descargar el archivo o la ruta no existe: {file_path}")
-            raise ValueError("No se pudo descargar el archivo o la ruta es inválida.")
-        
-        logger.info(f"Archivo descargado en: {file_path}")
-        filename = os.path.basename(file_path)
-        mime_type, _ = mimetypes.guess_type(file_path)
-        logger.info(f"Tipo MIME detectado: {mime_type}")
-
-        # Determinar tipo y procesar
-        if mime_type:
-            if mime_type.startswith("image"):
-                new_path = f"rewritten_{filename}"
-                sanitize_image(file_path, new_path)
-            elif mime_type.startswith("audio"):
-                base_name = os.path.splitext(filename)[0]
-                new_path = f"rewritten_{base_name}.mp3"
-                sanitize_audio(file_path, new_path)
-            elif mime_type.startswith("video"):
-                base_name = os.path.splitext(filename)[0]
-                new_path = f"rewritten_{base_name}.mp4"
-                sanitize_video(file_path, new_path)
-            else:
-                new_path = f"rewritten_{filename}"
-                logger.info(f"Copiando archivo no multimedia: {file_path}")
-                shutil.copy(file_path, new_path)
-        else:
-            new_path = f"rewritten_{filename}"
-            logger.info(f"Tipo MIME desconocido, copiando archivo: {file_path}")
-            shutil.copy(file_path, new_path)
-
-        if not os.path.exists(new_path):
-            logger.error(f"No se generó el archivo procesado: {new_path}")
-            raise ValueError("No se generó el archivo procesado.")
-
-        # Enviar archivo procesado
-        logger.info(f"Enviando archivo procesado: {new_path}")
-        await message.reply_document(new_path)
-    except Exception as e:
-        logger.error(f"Error general al procesar archivo {file_path}: {e}")
-        await message.reply_text(f"No se pudo procesar el archivo: {str(e)}")
-    finally:
-        # Limpiar archivos temporales
-        for path in [file_path, new_path]:
-            if path and os.path.exists(path):
-                try:
-                    os.remove(path)
-                    logger.info(f"Archivo eliminado: {path}")
-                except OSError as e:
-                    logger.error(f"Error al eliminar archivo {path}: {e}")
+            # Attempt to upload a file
+            await upload_with_retry(app, CHAT_ID, FILE_PATH)
+        except Exception as e:
+            logger.error(f"Main loop error: {e}")
 
 if __name__ == "__main__":
-    app.run()
+    # Run the bot
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")
+    except Exception as e:
+        logger.error(f"Fatal error: {e}")
