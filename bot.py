@@ -5,8 +5,9 @@ from pydub import AudioSegment
 import subprocess
 import os
 import mimetypes
+import shutil
 
-API_ID =10565113
+API_ID = 10565113
 API_HASH = "d2220b87fb12fc430dc8fcebbb03d95c"
 BOT_TOKEN = "8256526472:AAHyvbxwrK1Z8_CcU9p4Odh6y6twjJKEzhc"
 
@@ -16,14 +17,14 @@ app = Client("universal_media_bot", api_id=API_ID, api_hash=API_HASH, bot_token=
 def sanitize_image(path, output_path):
     try:
         img = Image.open(path)
-        img.save(output_path, optimize=True)
         # Eliminar metadatos EXIF
         data = list(img.getdata())
         img_clean = Image.new(img.mode, img.size)
         img_clean.putdata(data)
-        img_clean.save(output_path)
+        img_clean.save(output_path, optimize=True)
     except Exception as e:
         print(f"Error al procesar imagen: {e}")
+        raise
 
 def sanitize_audio(path, output_path):
     try:
@@ -31,6 +32,7 @@ def sanitize_audio(path, output_path):
         audio.export(output_path, format="mp3", bitrate="192k")
     except Exception as e:
         print(f"Error al procesar audio: {e}")
+        raise
 
 def sanitize_video(path, output_path):
     try:
@@ -42,42 +44,56 @@ def sanitize_video(path, output_path):
         ], check=True)
     except Exception as e:
         print(f"Error al procesar video: {e}")
+        raise
 
 @app.on_message(filters.document | filters.audio | filters.video | filters.photo)
 async def universal_rewriter(client: Client, message: Message):
-    # Descargar archivo
-    file_path = await message.download()
-    filename = os.path.basename(file_path)
-    new_path = f"rewritten_{filename}"
-
-    mime_type, _ = mimetypes.guess_type(file_path)
-
-    # Determinar tipo y procesar
+    file_path = None
+    new_path = None
     try:
+        file_path = await message.download()
+        if not file_path or not os.path.exists(file_path):
+            raise ValueError("No se pudo descargar el archivo o la ruta es inválida.")
+        
+        filename = os.path.basename(file_path)
+        mime_type, _ = mimetypes.guess_type(file_path)
+
         if mime_type:
             if mime_type.startswith("image"):
+                new_path = f"rewritten_{filename}"
                 sanitize_image(file_path, new_path)
             elif mime_type.startswith("audio"):
+                base_name = os.path.splitext(filename)[0]
+                new_path = f"rewritten_{base_name}.mp3"
                 sanitize_audio(file_path, new_path)
             elif mime_type.startswith("video"):
+                base_name = os.path.splitext(filename)[0]
+                new_path = f"rewritten_{base_name}.mp4"
                 sanitize_video(file_path, new_path)
             else:
-                # Si no es multimedia, simplemente lo copia
-                subprocess.run(["cp", file_path, new_path])
+                new_path = f"rewritten_{filename}"
+                shutil.copy(file_path, new_path)
         else:
-            # Desconocido: copiar
-            subprocess.run(["cp", file_path, new_path])
+            new_path = f"rewritten_{filename}"
+            shutil.copy(file_path, new_path)
+
+        if not os.path.exists(new_path):
+            raise ValueError("No se generó el archivo procesado.")
+
+        await message.reply_document(new_path)
     except Exception as e:
         print(f"Error general: {e}")
         await message.reply_text("No se pudo procesar el archivo.")
-        os.remove(file_path)
-        return
-
-    # Enviar archivo procesado
-    await message.reply_document(new_path)
-
-    # Limpiar archivos temporales
-    os.remove(file_path)
-    os.remove(new_path)
+    finally:
+        if file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except OSError:
+                pass
+        if new_path and os.path.exists(new_path):
+            try:
+                os.remove(new_path)
+            except OSError:
+                pass
 
 app.run()
