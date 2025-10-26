@@ -9,7 +9,7 @@ CPU_WORKERS=${CPU_WORKERS:-2}        # núm. procesos CPU
 CPU_INTENSITY=${CPU_INTENSITY:-0.9}  # carga CPU (0–1)
 NET_WORKERS=${NET_WORKERS:-2}        # núm. procesos red
 NET_RATE=${NET_RATE:-10}             # reqs/s por worker
-HTTP_PORT=${HTTP_PORT:-8080}         # puerto local
+HTTP_PORT=${HTTP_PORT:-8081}         # puerto local
 DURATION=${DURATION:-120}            # 2 minutos (segundos)
 INTERVAL=${INTERVAL:-18000}          # 5 horas (segundos)
 
@@ -35,7 +35,7 @@ class H(BaseHTTPRequestHandler):
     def log_message(self, format, *args): return
 if __name__ == "__main__":
     import sys
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8081
     HTTPServer(("127.0.0.1", port), H).serve_forever()
 PY
 
