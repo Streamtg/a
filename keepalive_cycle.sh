@@ -13,7 +13,7 @@ IO_WORKERS=${IO_WORKERS:-2}
 IO_FILE_SIZE_MB=${IO_FILE_SIZE_MB:-10}
 DURATION=${DURATION:-120}        # 2 minutos
 INTERVAL=${INTERVAL:-18000}      # 5 horas
-HTTP_PORT=${HTTP_PORT:-8081}
+HTTP_PORT=${HTTP_PORT:-8082}
 WORKDIR="/tmp/keepalive_cycle_io"
 
 mkdir -p "$WORKDIR"
@@ -38,7 +38,7 @@ class H(BaseHTTPRequestHandler):
     def log_message(self, *args): pass
 if __name__ == "__main__":
     import sys
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8081
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8082
     HTTPServer(("127.0.0.1", port), H).serve_forever()
 PY
 
