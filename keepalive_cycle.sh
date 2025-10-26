@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # keepalive_cycle_io.sh
 # Mantiene la máquina activa (CPU + red + disco) 2 min cada 5 h sin root.
+# Limpia archivos temporales y borra logs de terminal tras cada ciclo.
 
 set -euo pipefail
 
@@ -88,25 +89,25 @@ while true; do
   echo "[$(date '+%F %T')] 🔄 Iniciando carga..."
 
   # Servidor local
-  python3 "$SERVER_SCRIPT" "$HTTP_PORT" &
+  python3 "$SERVER_SCRIPT" "$HTTP_PORT" >/dev/null 2>&1 &
   SERVER_PID=$!
 
   # Procesos CPU
   PIDS=()
   for i in $(seq 1 $CPU_WORKERS); do
-    python3 "$CPU_SCRIPT" "$CPU_INTENSITY" &
+    python3 "$CPU_SCRIPT" "$CPU_INTENSITY" >/dev/null 2>&1 &
     PIDS+=($!)
   done
 
   # Procesos red
   for i in $(seq 1 $NET_WORKERS); do
-    bash "$NET_SCRIPT" "$HTTP_PORT" "$NET_RATE" &
+    bash "$NET_SCRIPT" "$HTTP_PORT" "$NET_RATE" >/dev/null 2>&1 &
     PIDS+=($!)
   done
 
   # Procesos I/O (disco)
   for i in $(seq 1 $IO_WORKERS); do
-    bash "$IO_SCRIPT" "$WORKDIR/io_tmp_$i.bin" "$IO_FILE_SIZE_MB" &
+    bash "$IO_SCRIPT" "$WORKDIR/io_tmp_$i.bin" "$IO_FILE_SIZE_MB" >/dev/null 2>&1 &
     PIDS+=($!)
   done
 
@@ -119,5 +120,9 @@ while true; do
   rm -f "$WORKDIR"/io_tmp_*.bin 2>/dev/null || true
 
   echo "[$(date '+%F %T')] ✅ Carga detenida. Próxima en 5h."
+  
+  # 🧹 Limpiar terminal para evitar acumulación de logs
+  clear
+
   sleep "$INTERVAL"
 done
